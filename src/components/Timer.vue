@@ -21,6 +21,7 @@
     const elapsedSeconds = ref(0);
     const intervalId = ref(null);
     const flowtime = ref(true);
+    const timerLive = ref(false);
     const emit = defineEmits();
     // Props & Emit
 
@@ -38,20 +39,31 @@
     const startStopwatch = () => {
         startTime.value = new Date().getTime() - elapsedSeconds.value * 1000;
         intervalId.value = setInterval(updateTime, 1000);
-        emit('timer-live', true);
+        timerLive.value = true;
+        emit('timer-live', timerLive.value);
+        chrome.runtime.sendMessage({ action: 'startTimer' }, function(response) {
+            intervalId.value = response.intervalId;
+            emit('timer-live', timerLive.value);
+        });
     };
 
     const resetStopwatch = () => {
         clearInterval(intervalId.value);
-        elapsedSeconds.value = 0;
-        saveElapsedSeconds();
-        emit('timer-live', false);
+        timerLive.value = false;
+        chrome.runtime.sendMessage({ action: 'stopTimer', intervalId: intervalId.value }, function(response) {
+            elapsedSeconds.value = 0;
+            saveElapsedSeconds();
+            emit('timer-live', timerLive.value);
+        });
     };
 
     const pauseTime = () => {
         clearInterval(intervalId.value);
-        saveElapsedSeconds();
-        emit('timer-live', false);
+        timerLive.value = false;
+        chrome.runtime.sendMessage({ action: 'stopTimer', intervalId: intervalId.value }, function(response) {
+            saveElapsedSeconds();
+            emit('timer-live', timerLive.value);
+        });
     }
 
     const finishFlowTime = () => {
@@ -86,15 +98,19 @@
     };
 
     const saveElapsedSeconds = () => {
-        chrome.storage.sync.set({ 'elapsedSeconds': elapsedSeconds.value });
+        chrome.storage.sync.set({ 'elapsedSeconds': elapsedSeconds.value, 'timerLive': timerLive.value });
     };
 
     // Hooks
 
     onMounted(() => {
-        chrome.storage.sync.get(['elapsedSeconds'], function(result) {
+        chrome.storage.sync.get(['elapsedSeconds','timerLive'], function(result) {
             if (result.elapsedSeconds) {
                 elapsedSeconds.value = result.elapsedSeconds
+                if (result.timerLive) {
+                    startTime.value = new Date().getTime() - elapsedSeconds.value * 1000;
+                    intervalId.value = setInterval(updateTime, 1000);
+                }
             }
         })
     })
