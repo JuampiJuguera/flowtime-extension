@@ -15,11 +15,18 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
             sendResponse({});
         });
     } else if (request.action === 'stopTimer') {
-                chrome.storage.local.get(['backgroundInterval'], function(result) {
-                chrome.storage.local.set({ 'timerLive': false });
-                clearInterval(result.backgroundInterval);
-                sendResponse({});
-            })
+        clearInterval(request.intervalId);
+        chrome.storage.local.remove('backgroundInterval');
+        sendResponse({});
     }
     return true;
 });
+
+chrome.runtime.onMessageExternal.addListener(function(request, sender, sendResponse) {
+    if (request.action === 'pauseTimer') {
+        clearInterval(request.intervalId);
+        sendResponse({});
+    }
+    return true;
+});
+

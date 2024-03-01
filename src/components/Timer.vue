@@ -45,7 +45,7 @@
     };
 
     const runBackgroundStopwatch = () => {
-        chrome.runtime.sendMessage({ action: 'startTimer' }, function(response) {});
+        chrome.runtime.sendMessage({ action: 'startTimer', intervalId: intervalId.value }, function(response) {});
     }
 
     const resetStopwatch = () => {
@@ -61,7 +61,7 @@
     const pauseTime = () => {
         clearInterval(intervalId.value);
         timerLive.value = false;
-        chrome.runtime.sendMessage({ action: 'stopTimer' }, function(response) {
+        chrome.runtime.sendMessage({ action: 'stopTimer', intervalId: intervalId.value }, function(response) {
             saveElapsedSeconds();
             emit('timer-live', timerLive.value);
         });
