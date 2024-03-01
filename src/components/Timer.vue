@@ -41,11 +41,12 @@
         intervalId.value = setInterval(updateTime, 1000);
         timerLive.value = true;
         emit('timer-live', timerLive.value);
-        chrome.runtime.sendMessage({ action: 'startTimer' }, function(response) {
-            intervalId.value = response.intervalId;
-            emit('timer-live', timerLive.value);
-        });
+        runBackgroundStopwatch();
     };
+
+    const runBackgroundStopwatch = () => {
+        chrome.runtime.sendMessage({ action: 'startTimer' }, function(response) {});
+    }
 
     const resetStopwatch = () => {
         clearInterval(intervalId.value);
@@ -60,7 +61,7 @@
     const pauseTime = () => {
         clearInterval(intervalId.value);
         timerLive.value = false;
-        chrome.runtime.sendMessage({ action: 'stopTimer', intervalId: intervalId.value }, function(response) {
+        chrome.runtime.sendMessage({ action: 'stopTimer' }, function(response) {
             saveElapsedSeconds();
             emit('timer-live', timerLive.value);
         });
@@ -98,18 +99,17 @@
     };
 
     const saveElapsedSeconds = () => {
-        chrome.storage.sync.set({ 'elapsedSeconds': elapsedSeconds.value, 'timerLive': timerLive.value });
+        chrome.storage.local.set({ 'elapsedSeconds': elapsedSeconds.value, 'timerLive': timerLive.value });
     };
 
     // Hooks
 
     onMounted(() => {
-        chrome.storage.sync.get(['elapsedSeconds','timerLive'], function(result) {
+        chrome.storage.local.get(['elapsedSeconds','timerLive'], function(result) {
             if (result.elapsedSeconds) {
                 elapsedSeconds.value = result.elapsedSeconds
                 if (result.timerLive) {
-                    startTime.value = new Date().getTime() - elapsedSeconds.value * 1000;
-                    intervalId.value = setInterval(updateTime, 1000);
+                    startStopwatch()
                 }
             }
         })
