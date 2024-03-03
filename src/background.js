@@ -22,6 +22,18 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
                 backgroundInterval = null;
             }
         }
+        if (request.action === 'startRestTimer') {
+            let restingElapsedSeconds = result.elapsedSeconds;
+            if (!backgroundInterval) {
+                backgroundInterval = setInterval(function() {
+                    restingElapsedSeconds = Math.max(0, restingElapsedSeconds - 1);
+                    chrome.storage.local.set({ 'elapsedSeconds': restingElapsedSeconds });
+                    if (restingElapsedSeconds === 0) {
+                        clearInterval(backgroundInterval);
+                    }
+                }, 1000);
+            }
+        }
     });
 });
 

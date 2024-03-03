@@ -22,6 +22,7 @@
     const intervalId = ref(null);
     const flowtime = ref(true);
     const timerLive = ref(false);
+    const restTimerLive = ref(false);
     const emit = defineEmits();
     // Props & Emit
 
@@ -52,7 +53,9 @@
     const resetStopwatch = () => {
         clearInterval(intervalId.value);
         timerLive.value = false;
+        restTimerLive.value = false;
         saveTimerLiveStatus();
+        saveRestTimerLiveStatus();
         chrome.runtime.sendMessage({ action: 'stopTimer', intervalId: intervalId.value }, function(response) {
             elapsedSeconds.value = 0;
             saveElapsedSeconds();
@@ -63,7 +66,9 @@
     const pauseTime = () => {
         clearInterval(intervalId.value);
         timerLive.value = false;
+        restTimerLive.value = false;
         saveTimerLiveStatus();
+        saveRestTimerLiveStatus();
         chrome.runtime.sendMessage({ action: 'stopTimer', intervalId: intervalId.value }, function(response) {
             saveElapsedSeconds();
             emit('timer-live', timerLive.value);
@@ -86,7 +91,10 @@
     }
 
     const startRest = () => {
+        restTimerLive.value = true;
+        saveRestTimerLiveStatus();
         intervalId.value = setInterval(updateRestTime, 1000);
+        chrome.runtime.sendMessage({ action: 'startRestTimer', intervalId: intervalId.value }, function(response) {});
     }
 
     const updateTime = () => {
@@ -111,6 +119,10 @@
         chrome.storage.local.set({ 'timerLive': timerLive.value });
     }
 
+    const saveRestTimerLiveStatus = () => {
+        chrome.storage.local.set({ 'restTimerLive': restTimerLive.value });
+    }
+
     const saveFlowtimeStatus = () => {
         chrome.storage.local.set({ 'flowtime': flowtime.value });
     }
@@ -118,7 +130,7 @@
     // Hooks
 
     onMounted(() => {
-        chrome.storage.local.get(['elapsedSeconds','timerLive', 'flowtime'], function(result) {
+        chrome.storage.local.get(['elapsedSeconds','timerLive', 'restTimerLive', 'flowtime'], function(result) {
             if ('flowtime' in result) {
                 flowtime.value = result.flowtime;
             }
@@ -126,6 +138,9 @@
                 elapsedSeconds.value = result.elapsedSeconds
                 if (result.timerLive) {
                     startStopwatch()
+                }
+                if (result.restTimerLive) {
+                    startRest()
                 }
             }
         })
