@@ -2,10 +2,10 @@
     <div>
         {{ formatTime }}
         <button v-if="flowtime" type="button" @click="startStopwatch">Start</button>
-        <button type="button" @click="pauseTime">Pause</button>
+        <button v-if="elapsedSeconds !== 0" type="button" @click="pauseTime">Pause</button>
         <button v-if="flowtime" type="button" @click="resetStopwatch">Reset</button>
         <button v-if="flowtime" type="button" @click="finishFlowTime">Finish FlowTime</button>
-        <button v-if="!flowtime" type="button" @click="startRest">Start Rest</button>
+        <button v-if="!flowtime && elapsedSeconds !== 0" type="button" @click="startRest">Start Rest</button>
         <button v-if="!flowtime" type="button" @click="finishRestTime">Finish Rest</button>
     </div>
 </template>
@@ -40,6 +40,7 @@
         startTime.value = new Date().getTime() - elapsedSeconds.value * 1000;
         intervalId.value = setInterval(updateTime, 1000);
         timerLive.value = true;
+        saveTimerLiveStatus();
         emit('timer-live', timerLive.value);
         runBackgroundStopwatch();
     };
@@ -51,6 +52,7 @@
     const resetStopwatch = () => {
         clearInterval(intervalId.value);
         timerLive.value = false;
+        saveTimerLiveStatus();
         chrome.runtime.sendMessage({ action: 'stopTimer', intervalId: intervalId.value }, function(response) {
             elapsedSeconds.value = 0;
             saveElapsedSeconds();
@@ -61,6 +63,7 @@
     const pauseTime = () => {
         clearInterval(intervalId.value);
         timerLive.value = false;
+        saveTimerLiveStatus();
         chrome.runtime.sendMessage({ action: 'stopTimer', intervalId: intervalId.value }, function(response) {
             saveElapsedSeconds();
             emit('timer-live', timerLive.value);
@@ -71,6 +74,7 @@
         pauseTime();
         elapsedSeconds.value = (elapsedSeconds.value / 300) * 60;
         flowtime.value = !flowtime.value;
+        saveFlowtimeStatus();
         saveElapsedSeconds();
         emit('timer-live', false);
     };
@@ -78,6 +82,7 @@
     const finishRestTime = () => {
         resetStopwatch();
         flowtime.value = !flowtime.value;
+        saveFlowtimeStatus();
     }
 
     const startRest = () => {
@@ -99,13 +104,24 @@
     };
 
     const saveElapsedSeconds = () => {
-        chrome.storage.local.set({ 'elapsedSeconds': elapsedSeconds.value, 'timerLive': timerLive.value });
+        chrome.storage.local.set({ 'elapsedSeconds': elapsedSeconds.value });
     };
+
+    const saveTimerLiveStatus = () => {
+        chrome.storage.local.set({ 'timerLive': timerLive.value });
+    }
+
+    const saveFlowtimeStatus = () => {
+        chrome.storage.local.set({ 'flowtime': flowtime.value });
+    }
 
     // Hooks
 
     onMounted(() => {
-        chrome.storage.local.get(['elapsedSeconds','timerLive'], function(result) {
+        chrome.storage.local.get(['elapsedSeconds','timerLive', 'flowtime'], function(result) {
+            if ('flowtime' in result) {
+                flowtime.value = result.flowtime;
+            }
             if (result.elapsedSeconds) {
                 elapsedSeconds.value = result.elapsedSeconds
                 if (result.timerLive) {
