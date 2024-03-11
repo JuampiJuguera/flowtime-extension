@@ -29,7 +29,7 @@
 
 
     // imports
-    import { ref, computed, watchEffect } from 'vue';
+    import { ref, computed, watchEffect, onMounted } from 'vue';
     // Uses
 
 
@@ -57,6 +57,7 @@
             'time': 0
         });
         newTask.value = ''
+        chrome.storage.session.set({ 'taskList': taskList.value });
     }
 
     const startTask = (task) => {
@@ -119,6 +120,16 @@
             pauseAllTasks();
         }
     });
+
+    onMounted(() => {
+        chrome.storage.session.get(['taskList'], function(result) {
+            for (const key in result.taskList) {
+                if (result.taskList.hasOwnProperty(key)) {
+                    taskList.value.push(result.taskList[key]);
+                }
+            }
+        })
+    })
 
 
 </script>
