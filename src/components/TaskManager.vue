@@ -29,7 +29,7 @@
 
 
     // imports
-    import { ref, computed, watchEffect, onMounted } from 'vue';
+    import { ref, computed, watchEffect, onMounted, onUpdated } from 'vue';
     // Uses
 
 
@@ -129,6 +129,10 @@
                 }
             }
         })
+    })
+
+    onUpdated(() => {
+        chrome.storage.session.set({ 'taskList': taskList.value });
     })
 
 

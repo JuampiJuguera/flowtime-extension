@@ -1,4 +1,5 @@
 let backgroundInterval = null;
+let timerCount = 0;
 
 chrome.runtime.onInstalled.addListener(function() {
     chrome.storage.local.set({ 'elapsedSeconds': 0 });
@@ -12,6 +13,7 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
                 backgroundInterval = setInterval(function() {
                     const currentTime = new Date().getTime();
                     const elapsedSeconds = Math.floor((currentTime - startTime) / 1000);
+                    timerCount = timerCount + 1;
                     chrome.storage.local.set({ 'elapsedSeconds': elapsedSeconds });
                 }, 1000);
             }
